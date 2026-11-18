@@ -1,1 +1,5 @@
-targets/**
+targets/
+Makefile
+.vscode/
+compile_commands.json
+git PersonalAccessToken
