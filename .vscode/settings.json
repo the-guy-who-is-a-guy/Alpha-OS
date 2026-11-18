@@ -1,0 +1,5 @@
+{
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc-15",
+    "C_Cpp.codeAnalysis.runAutomatically": true,
+    "git.enabled": false
+}

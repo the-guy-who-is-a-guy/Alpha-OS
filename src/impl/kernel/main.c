@@ -24,7 +24,7 @@ void kernel_main(){
     
     keyboard_set_handler(handle_input);
     print_string("INITIALIZED KEYBOARD HANDLER\n");
-
+/*
     uint8_t prev_seconds = 0;
 
     for (uint8_t i = 0; i < 5;){
@@ -40,6 +40,6 @@ void kernel_main(){
         }
     }
     print_string(" - Seconds loop disabled. \n");
-
+*/
     while (1){__asm__ volatile ("hlt");};
 }

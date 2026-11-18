@@ -1,0 +1,17 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-I",
+      "src/intf",
+      "-ffreestanding",
+      "-o",
+      "build/kernel/main.o",
+      "src/impl/kernel/main.c"
+    ],
+    "directory": "/home/nguk7/OS",
+    "file": "/home/nguk7/OS/src/impl/kernel/main.c",
+    "output": "/home/nguk7/OS/build/kernel/main.o"
+  }
+]
