@@ -61,6 +61,7 @@ void pic_remap() {
 	uint8_t mask_master = port_inb(PORT_PIC1_DATA);
 	uint8_t mask_slave = port_inb(PORT_PIC2_DATA);
 	mask_master &= ~(1 << IRQ1_KEYBOARD);
+	mask_master &= ~(1 << IRQ0_TIMER);
 	port_outb(PORT_PIC1_DATA, mask_master);
 	port_wait();
 	port_outb(PORT_PIC2_DATA, mask_slave);

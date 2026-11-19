@@ -1,6 +1,9 @@
 extern idt_handler_keyboard
 global idt_load
 
+extern idt_handler_timer
+global idt_handler_timer_wrapped
+
 idt_load:
     lidt [rdi]
     ret
@@ -50,3 +53,4 @@ unhandled_interrupt_stub:
 %endmacro
 
 WRAPPED_HANDLER idt_handler_keyboard
+WRAPPED_HANDLER idt_handler_timer
