@@ -4,6 +4,7 @@
 #include "idt.h"
 #include "x86_64/ps2.h"
 #include "keycodes.h"
+#include "print.h"
 
 void (*keyboard_handler_user)(struct KeyboardEvent event);
 
@@ -122,6 +123,16 @@ char keyboard_getchar(void) {
     if (ev.type == KEYBOARD_EVENT_TYPE_BREAK) {
         return 0;
     }
+
+    char c = to_ascii(ev.code, shift_pressed, caps_lock_on);
+    if (c == 0 && ev.code != 0x2A && ev.code != 0x36) {  /* not shift */
+        print_set_color(COLOR_RED, COLOR_BLACK);
+        print_string("[UNMAPPED:");
+        print_uint64_hex(ev.code);
+        print_string("]");
+    }
+    return c;
+
     return to_ascii(ev.code, shift_pressed, caps_lock_on);
 }
 

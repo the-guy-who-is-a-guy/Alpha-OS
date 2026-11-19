@@ -5,8 +5,9 @@
 #include "timer.h"
 #include "x86_64/port.h"
 #include "idt.h"
+#include "shell.h"
 
-#define DEBUG_TEST 1
+#define DEBUG_TEST 0
 #define TIMER_HZ 100
 
 // Input handler
@@ -64,16 +65,12 @@ void kernel_main(){
     print_char('\n');
 
     uint64_t last_second = 0;
+    
+    char line[128];
+    print_string("> ");
     while (1){
-        keyboard_process();
-        if (DEBUG_TEST == 2){
-            uint64_t now = timer_get_ticks();
-            if (now / 100 > last_second) {
-                last_second = now / 100;
-                print_set_color(COLOR_WHITE, COLOR_BLACK);
-                print_string("TICK\n");
-            }
-        }
-        asm volatile ("sti\n\thlt" ::: "memory");    
+        readline(line, sizeof line);
+        handle_command(line);
+        print_string("> ");
     }
 }

@@ -44,19 +44,21 @@ void newline(){
 }
 
 void print_char(char c) {
-    if (c == '\n') {
-        newline();
+    if (c == '\n') { newline(); return; }
+
+    if (c == '\b') {
+        if (col > 0) {
+            col--;
+        } else if (row > 0) {
+            row--;
+            col = NUM_COLS - 1;
+        }
         return;
     }
-    if (col >= NUM_COLS) {
-        newline();
-    }
 
-    buffer[col + NUM_COLS * row] = (struct Char) {
-        character: (uint8_t) c,
-        color: color,
-    };
+    if (col >= NUM_COLS) newline();
 
+    buffer[col + NUM_COLS * row] = (struct Char){ .character = (uint8_t)c, .color = color };
     col++;
 }
 
