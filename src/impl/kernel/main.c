@@ -3,7 +3,7 @@
 #include "keyboard.h"
 #include "keycodes.h"
 #include "timer.h"
-#include "x86_64/port.h"
+#include "x86_64/serial.h"
 #include "idt.h"
 #include "shell.h"
 
@@ -39,6 +39,7 @@ uint64_t last_second = 0;
 
 void kernel_main(){
     print_clear();
+    serial_init();
     print_set_color(COLOR_YELLOW, COLOR_BLACK);
     print_string("ALPHA OS - BOOTED\n");
 
@@ -51,21 +52,16 @@ void kernel_main(){
     print_string("INITIALIZED KEYBOARD\n");
     
     keyboard_set_handler(handle_input);
-    print_string("INITIALIZED KEYBOARD HANDLER\n");
+    print_string("INITIALIZED KEYBOARD HANDLER\n\n");
+    print_string("********************\n");
+    print_string("* BASE SHELL v0.01 *\n");
+    print_string("********************\n\n");
     asm volatile ("sti");
-    
-    print_string("Mask master: 0x");
-    print_uint64_hex(port_inb(0x21));
-    print_char('\n');
-    print_string("Ticks at start: ");
-    print_uint64_dec(timer_get_ticks());
-    print_char('\n');
-    print_string("PIC mask: 0x");
-    print_uint64_hex(port_inb(0x21));   // master IMR
-    print_char('\n');
 
     uint64_t last_second = 0;
-    
+    volatile uint64_t *bad = (uint64_t *)0xDEADDEC0000;
+    (void)*bad;
+
     char line[128];
     print_string("> ");
     while (1){
