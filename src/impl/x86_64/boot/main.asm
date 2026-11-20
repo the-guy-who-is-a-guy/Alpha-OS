@@ -1,10 +1,16 @@
 global start
 extern long_mode_start
 
+section .bss
+global multiboot_ptr
+multiboot_ptr:
+    resq 1
+
 section .text
 bits 32
 
 start:
+    mov [multiboot_ptr], ebx
     mov esp, stack_top
     
     call check_multiboot
@@ -110,7 +116,7 @@ enable_paging:
     ret
 
 section .bss
-align 4096
+alignb 4096
 page_table_l4:
     resb 4096
 page_table_l3:

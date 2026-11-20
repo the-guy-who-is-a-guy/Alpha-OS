@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define KEY_LEFT   0x11   /* Ctrl+Q — unused in shells */
+#define KEY_RIGHT  0x12
+#define KEY_UP     0x13
+#define KEY_DOWN   0x14
+
 enum {
     KEYBOARD_EVENT_TYPE_MAKE = 0,
     KEYBOARD_EVENT_TYPE_BREAK = 1,

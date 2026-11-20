@@ -27,3 +27,16 @@ void serial_write_string(const char *str) {
         serial_write(*str++);
     }
 }
+
+void serial_write_hex64(uint64_t value) {
+    static const char digits[] = "0123456789abcdef";
+    int started = 0;
+
+    for (int shift = 60; shift >= 0; shift -= 4) {
+        uint8_t nib = (value >> shift) & 0xF;
+        if (nib != 0 || started || shift == 0) {
+            started = 1;
+            serial_write(digits[nib]);
+        }
+    }
+}

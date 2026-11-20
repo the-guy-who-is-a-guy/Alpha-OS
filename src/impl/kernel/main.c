@@ -6,6 +6,8 @@
 #include "x86_64/serial.h"
 #include "idt.h"
 #include "shell.h"
+#include "multiboot2.h"
+#include "falloc.h"
 
 #define DEBUG_TEST 0
 #define TIMER_HZ 100
@@ -35,11 +37,12 @@ void sleep_ms(uint64_t ms) {
     }
 }
 
-uint64_t last_second = 0;
-
-void kernel_main(){
+void kernel_main(uint64_t multiboot_addr){
     print_clear();
     serial_init();
+    serial_write_string("SERIAL\n");
+    parse_memory_map(multiboot_addr);
+    frames_init();
     print_set_color(COLOR_YELLOW, COLOR_BLACK);
     print_string("ALPHA OS - BOOTED\n");
 
@@ -59,13 +62,11 @@ void kernel_main(){
     asm volatile ("sti");
 
     uint64_t last_second = 0;
-    volatile uint64_t *bad = (uint64_t *)0xDEADDEC0000;
-    (void)*bad;
-
+    
     char line[128];
     print_string("> ");
     while (1){
-        readline(line, sizeof line);
+        readline(line, sizeof line, "> ");
         handle_command(line);
         print_string("> ");
     }

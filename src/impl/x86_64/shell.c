@@ -4,28 +4,69 @@
 #include "string.h"
 #include "timer.h"
 #include "x86_64/rtc.h"
+#include "falloc.h"
 
-void readline(char *buf, size_t max) {
-    size_t i = 0;
+static size_t prev_len = 0;
+static void redraw_line(const char *buf, size_t len, size_t pos, const char* prompt) {
+    print_char('\r');
+    print_string(prompt);
+    for (size_t i = 0; i < len; i++) print_char(buf[i]);
+    for (size_t i = len; i < prev_len; i++) print_char(' ');
+    for (size_t i = (len > prev_len ? len : prev_len); i > pos; i--) print_char('\b');
+    prev_len = len;
+}
+
+void readline(char *buf, size_t max, const char *prompt) {
+    size_t len = 0;
+    size_t pos = 0;
+    static size_t prev_len = 0;
+
     while (1) {
         char c = keyboard_getchar();
         if (c == 0) continue;
 
-        if (c == '\n') {
-            buf[i] = '\0';
-            print_char('\n');
-            return;
-        }
-        if (c == '\b') {
-            if (i > 0) {
-                i--;
-                print_string("\b \b");
+        if (c == KEY_LEFT)  {
+            if (pos > 0) {
+                pos--;
+                print_char('\b');
             }
             continue;
         }
-        if (i < max - 1) {
-            buf[i++] = c;
-            print_char(c);
+        if (c == KEY_RIGHT) {
+            if (pos < len) {
+                pos++;
+                print_char(buf[pos - 1]);
+            }
+            continue;
+        }
+        if (c == KEY_UP)    { /* history up        */ continue; }
+        if (c == KEY_DOWN)  { /* history down      */ continue; }
+
+        if (c == '\n') {
+            buf[len] = '\0';
+            print_char('\n');
+            prev_len = 0;
+            return;
+        }
+
+        if (c == '\b') {
+            if (pos > 0) {
+                for (size_t i = pos; i < len; i++) buf[i - 1] = buf[i];
+                pos--;
+                len--;
+                buf[len] = '\0';
+                redraw_line(buf, len, pos, prompt);
+            }
+            continue;
+        }
+
+        if (len < max - 1) {
+            for (size_t i = len; i > pos; i--) buf[i] = buf[i - 1];
+            buf[pos] = c;
+            pos++;
+            len++;
+            buf[len] = '\0';
+            redraw_line(buf, len, pos, prompt);
         }
     }
 }
@@ -40,7 +81,7 @@ static void cmd_help(void) {
     print_string("  reboot   - halt (no ACPI reset yet)\n");
 }
 
-static void cmd_echo(const char *arg) {
+static void cmd_echo(char *arg) {
     print_string(arg);
     print_char('\n');
 }
@@ -66,6 +107,21 @@ void handle_command(const char *cmd) {
         print_string("halting (no reset yet)\n");
         asm volatile ("cli");
         while (1) asm volatile ("hlt");
+    } else if (strcmp(cmd, "alloc") == 0) {
+        uint64_t f = alloc_frame();
+        if (f == 0) {
+            print_string("out of memory\n");
+        } else {
+            print_string("allocated frame at 0x");
+            print_uint64_hex(f);
+            print_char('\n');
+        }
+    } else if (strncmp(cmd, "free ", 5) == 0) {
+        /* parse hex address from cmd+5, call free_frame */
+    } else if (strcmp(cmd, "frames") == 0) {
+        print_string("free frames: ");
+        print_uint64_dec(frames_free_count());
+        print_char('\n');
     } else {
         print_string("unknown: ");
         print_string(cmd);

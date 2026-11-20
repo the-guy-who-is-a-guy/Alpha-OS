@@ -24,6 +24,8 @@ void print_clear() {
     for (size_t i = 0; i < NUM_ROWS; i++) {
         clear_row(i);
     }
+    row = 0;
+    col = 0;
 }
 
 void newline(){
@@ -33,10 +35,10 @@ void newline(){
         return;
     }
 
-    for (size_t row = 1; row < NUM_ROWS; row++) {
-        for (size_t col = 0; col < NUM_COLS; col++) {
-            struct Char character = buffer[col + NUM_COLS * row];
-            buffer[col + NUM_COLS * (row - 1)] = character;
+    for (size_t r = 1; r < NUM_ROWS; r++) {
+        for (size_t c = 0; c < NUM_COLS; c++) {
+            struct Char character = buffer[r];
+            buffer[c + NUM_COLS * (r - 1)] = character;
         }
     }
 
@@ -54,6 +56,10 @@ void print_char(char c) {
             col = NUM_COLS - 1;
         }
         return;
+    }
+
+    if (c == '\r') {
+        col = 0; return;
     }
 
     if (col >= NUM_COLS) newline();

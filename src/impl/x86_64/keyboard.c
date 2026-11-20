@@ -5,6 +5,7 @@
 #include "x86_64/ps2.h"
 #include "keycodes.h"
 #include "print.h"
+#include "x86_64/serial.h"
 
 void (*keyboard_handler_user)(struct KeyboardEvent event);
 
@@ -124,14 +125,13 @@ char keyboard_getchar(void) {
         return 0;
     }
 
+    if (ev.code == 0xE04B) return KEY_LEFT;
+    if (ev.code == 0xE04D) return KEY_RIGHT;
+    if (ev.code == 0xE048) return KEY_UP;
+    if (ev.code == 0xE050) return KEY_DOWN;
+
     char c = to_ascii(ev.code, shift_pressed, caps_lock_on);
-    if (c == 0 && ev.code != 0x2A && ev.code != 0x36) {  /* not shift */
-        print_set_color(COLOR_RED, COLOR_BLACK);
-        print_string("[UNMAPPED:");
-        print_uint64_hex(ev.code);
-        print_string("]");
-    }
-    return c;
+
 
     return to_ascii(ev.code, shift_pressed, caps_lock_on);
 }
