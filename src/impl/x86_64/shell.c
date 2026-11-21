@@ -6,6 +6,7 @@
 #include "x86_64/rtc.h"
 #include "falloc.h"
 #include "vmm.h"
+#include "heap.h"
 
 static size_t prev_len = 0;
 static void redraw_line(const char *buf, size_t len, size_t pos, const char* prompt) {
@@ -162,6 +163,29 @@ void handle_command(const char *cmd) {
         print_char('\n');
     } else if (strcmp(cmd, "maptest") == 0) {
         cmd_maptest();
+    } else if (strcmp(cmd, "heap") == 0) {
+        void* a = kmalloc(64);
+        void* b = kmalloc(128);
+        print_string("kmalloc(64)  -> 0x");
+        print_uint64_hex((uint64_t)a);
+        print_char('\n');
+        print_string("kmalloc(128) -> 0x");
+        print_uint64_hex((uint64_t)b);
+        print_char('\n');
+
+        if (a && b) {
+            /* Write and read back to prove the memory is real */
+            *(uint64_t*)a = 0xCAFEBABE;
+            *(uint64_t*)b = 0xDEADBEEF;
+            print_string("Read back a: 0x");
+            print_uint64_hex(*(uint64_t*)a);
+            print_char('\n');
+            print_string("Read back b: 0x");
+            print_uint64_hex(*(uint64_t*)b);
+            print_char('\n');
+        } else {
+            print_string("kmalloc failed\n");
+        }
     } else {
         print_string("unknown: ");
         print_string(cmd);

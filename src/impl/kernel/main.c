@@ -8,6 +8,7 @@
 #include "shell.h"
 #include "multiboot2.h"
 #include "falloc.h"
+#include "heap.h"
 
 #define DEBUG_TEST 0
 #define TIMER_HZ 100
@@ -59,6 +60,7 @@ void kernel_main(uint64_t multiboot_addr){
     print_string("********************\n");
     print_string("* BASE SHELL v0.01 *\n");
     print_string("********************\n\n");
+    heap_init();
     asm volatile ("sti");
 
     uint64_t last_second = 0;
