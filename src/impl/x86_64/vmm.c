@@ -8,6 +8,33 @@ static uint64_t *get_pml4(void) {
     return (uint64_t *)(cr3 & PAGE_ADDR_MASK);
 }
 
+static void split_huge_page(uint64_t *pd, uint64_t pd_idx, uint64_t virt) {
+    uint64_t entry = pd[pd_idx];
+
+    uint64_t huge_base = entry & 0x000FFFFFFFE00000ULL;
+
+    uint64_t flags = entry & 0xFFF;
+    flags &= ~PAGE_HUGE;
+    flags |= PAGE_PRESENT | PAGE_WRITABLE;
+
+    uint64_t pt_phys = alloc_frame();
+    if (pt_phys == 0) {
+        panic("vmm: out of memory splitting huge page");
+    }
+
+    uint64_t *pt = (uint64_t *)pt_phys;
+    for (int i = 0; i < 512; i++) {
+        pt[i] = (huge_base + (uint64_t)i * 4096) | flags;
+    }
+
+    pd[pd_idx] = pt_phys | PAGE_PRESENT | PAGE_WRITABLE;
+
+    uint64_t cr3;
+    asm volatile ("mov %%cr3, %0" : "=r"(cr3));
+    asm volatile ("mov %0, %%cr3" : : "r"(cr3) : "memory");
+}
+
+
 static uint64_t *next_table(uint64_t *entry) {
     if (!(*entry & PAGE_PRESENT)) {
         uint64_t frame = alloc_frame();
@@ -34,7 +61,7 @@ void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
     uint64_t *pd   = next_table(&pdpt[pdpt_idx]);
 
     if (pd[pd_idx] & PAGE_HUGE) {
-        panic("vmm: tried to map inside a 2 MiB huge page (test above 1 GiB)");
+        split_huge_page(pd, pd_idx, virt);
     }
 
     uint64_t *pt = next_table(&pd[pd_idx]);

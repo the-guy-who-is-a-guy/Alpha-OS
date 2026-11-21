@@ -124,6 +124,38 @@ static void cmd_maptest(void) {
     print_string("maptest: unmapped\n");
 }
 
+static void cmd_splittest(void) {
+    const uint64_t virt = 0x200000;   /* 2 MiB — inside the identity map */
+
+    /* Before: read the current value at 0x200000 (some kernel data). */
+    uint64_t before = *(volatile uint64_t *)virt;
+    print_string("splittest: before = 0x");
+    print_uint64_hex(before);
+    print_char('\n');
+
+    /* Map a new frame at 0x200000. This forces a split. */
+    uint64_t frame = alloc_frame();
+    if (frame == 0) { print_string("alloc failed\n"); return; }
+
+    vmm_map_page(virt, frame, PAGE_WRITABLE);
+
+    /* Write a marker to the new mapping. */
+    *(volatile uint64_t *)virt = 0xDEADBEEFCAFEBABEULL;
+
+    /* Read it back — should be the marker, not the old value. */
+    uint64_t after = *(volatile uint64_t *)virt;
+    print_string("splittest: after  = 0x");
+    print_uint64_hex(after);
+    print_char('\n');
+
+    /* Also check a neighbor address — it should still show the old data
+       (the split preserved the identity mapping for the other 511 pages). */
+    uint64_t neighbor = *(volatile uint64_t *)(virt + 0x1000);
+    print_string("splittest: neighbor = 0x");
+    print_uint64_hex(neighbor);
+    print_char('\n');
+}
+
 
 void handle_command(const char *cmd) {
     if (cmd[0] == '\0') return;
@@ -174,7 +206,6 @@ void handle_command(const char *cmd) {
         print_char('\n');
 
         if (a && b) {
-            /* Write and read back to prove the memory is real */
             *(uint64_t*)a = 0xCAFEBABE;
             *(uint64_t*)b = 0xDEADBEEF;
             print_string("Read back a: 0x");
@@ -186,7 +217,9 @@ void handle_command(const char *cmd) {
         } else {
             print_string("kmalloc failed\n");
         }
-    } else {
+    } else if (strcmp(cmd, "splittest") == 0){
+        cmd_splittest();
+    }else {
         print_string("unknown: ");
         print_string(cmd);
         print_char('\n');
