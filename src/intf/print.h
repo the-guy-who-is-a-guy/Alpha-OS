@@ -30,3 +30,4 @@ void print_set_color(uint8_t foreground, uint8_t background);
 void print_uint64_dec(uint64_t value);
 void print_uint64_hex(uint64_t value);
 void print_uint64_bin(uint64_t value);
+void kprintf(const char *fmt, ...);

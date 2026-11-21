@@ -64,12 +64,14 @@ void kernel_main(uint64_t multiboot_addr){
     asm volatile ("sti");
 
     uint64_t last_second = 0;
-    
+
     char line[128];
+    char *argv[MAX_ARGS];
     print_string("> ");
-    while (1){
+    while (1) {
         readline(line, sizeof line, "> ");
-        handle_command(line);
+        int argc = parse_args(line, argv);
+        handle_command(argc, argv);
         print_string("> ");
     }
 }

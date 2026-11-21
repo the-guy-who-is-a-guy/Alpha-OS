@@ -1,4 +1,8 @@
 #include "print.h"
+#include "heap.h"
+#include <stdarg.h>
+#include "string.h"
+#include "x86_64/serial.h"
 
 const static size_t NUM_COLS = 80;
 const static size_t NUM_ROWS = 25;
@@ -140,4 +144,14 @@ void print_uint64_bin(uint64_t value) {
         print_char(buffer[i - 1]);
     }
     return;
+}
+void kprintf(const char *fmt, ...) {
+    char buf[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof buf, fmt, args);
+    va_end(args);
+
+    print_string(buf);
+    serial_write_string(buf);
 }

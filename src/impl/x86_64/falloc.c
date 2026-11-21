@@ -16,6 +16,7 @@ struct MemoryRange usable_ranges[MAX_MEMORY_RANGES];
 int usable_range_count = 0;
 
 /* The boot image starts at 1 MiB; _kernel_end is a higher-half virtual address. */
+extern uint8_t _kernel_start;
 extern uint8_t _kernel_end;
 
 /* ------------------------------------------------------------------ */
@@ -72,6 +73,7 @@ void frames_init(void) {
     /* 4. Reserve the boot image and higher-half kernel. */
     uint64_t k_start = KERNEL_PHYS_START / FRAME_SIZE;
     uint64_t k_end   = (((uint64_t)&_kernel_end - KERNEL_VMA) + FRAME_SIZE - 1) / FRAME_SIZE;
+
     for (uint64_t f = k_start; f < k_end && f < MAX_FRAMES; f++) {
         bitmap_set(f);
     }

@@ -7,6 +7,28 @@
 #include "falloc.h"
 #include "vmm.h"
 #include "heap.h"
+#define HISTORY_MAX 16
+#define MAX_ARGS 32
+static char *history[HISTORY_MAX];
+static int   history_count = 0;
+static int   history_next  = 0;
+
+static void history_add(const char *cmd) {
+    if (cmd[0] == '\0') return;
+
+    char *copy = strdup(cmd);
+    if (!copy) return;
+
+    if (history_count == HISTORY_MAX) {
+        kfree(history[history_next]);
+    } else {
+        history_count++;
+    }
+
+    history[history_next] = copy;
+    history_next = (history_next + 1) % HISTORY_MAX;
+}
+
 
 static size_t prev_len = 0;
 static void redraw_line(const char *buf, size_t len, size_t pos, const char* prompt) {
@@ -16,6 +38,20 @@ static void redraw_line(const char *buf, size_t len, size_t pos, const char* pro
     for (size_t i = len; i < prev_len; i++) print_char(' ');
     for (size_t i = (len > prev_len ? len : prev_len); i > pos; i--) print_char('\b');
     prev_len = len;
+}
+
+int parse_args(char *line, char *argv[MAX_ARGS]) {
+    int argc = 0;
+    char *p = line;
+
+    while (*p && argc < MAX_ARGS) {
+        while (*p == ' ') p++;          /* skip leading spaces */
+        if (!*p) break;
+        argv[argc++] = p;               /* start of token */
+        while (*p && *p != ' ') p++;    /* find end of token */
+        if (*p) *p++ = '\0';            /* terminate token */
+    }
+    return argc;
 }
 
 void readline(char *buf, size_t max, const char *prompt) {
@@ -155,14 +191,41 @@ static void cmd_splittest(void) {
     print_uint64_hex(neighbor);
     print_char('\n');
 }
+static void cmd_history(void) {
+    if (history_count == 0) {
+        print_string("history: empty\n");
+        return;
+    }
+
+    /* Oldest entry index:
+       - if not wrapped: 0
+       - if wrapped: history_next (the slot about to be overwritten) */
+    int start = (history_count < HISTORY_MAX) ? 0 : history_next;
+
+    for (int i = 0; i < history_count; i++) {
+        int idx = (start + i) % HISTORY_MAX;
+
+        /* Print the slot number (1-based, oldest = 1) */
+        print_uint64_dec((uint64_t)(i + 1));
+        print_string("  ");
+        print_string(history[idx] ? history[idx] : "(null)");
+        print_char('\n');
+    }
+}
 
 
-void handle_command(const char *cmd) {
-    if (cmd[0] == '\0') return;
+void handle_command(int argc, char *argv[]) {
+    if (argc == 0) return;
+    
+    const char *cmd = argv[0];
+
+    history_add(cmd);
 
     if (strcmp(cmd, "help") == 0) {
         cmd_help();
     } else if (strcmp(cmd, "clear") == 0) {
+        print_clear();
+    } else if (strcmp(cmd, "cls") == 0) {
         print_clear();
     } else if (strcmp(cmd, "uptime") == 0) {
         print_string("uptime: ");
@@ -172,8 +235,12 @@ void handle_command(const char *cmd) {
         print_string("rtc seconds: ");
         print_uint64_dec(rtc_seconds());
         print_char('\n');
-    } else if (strncmp(cmd, "echo ", 5) == 0) {
-        cmd_echo(cmd + 5);
+    } else if (strncmp(cmd, "echo", 5) == 0) {
+        for (int i=1; i<argc; i++){
+            if (i > 1) print_char(' ');
+            print_string(argv[i]);
+        }
+        print_char('\n');
     } else if (strcmp(cmd, "reboot") == 0) {
         print_string("halting (no reset yet)\n");
         asm volatile ("cli");
@@ -219,7 +286,27 @@ void handle_command(const char *cmd) {
         }
     } else if (strcmp(cmd, "splittest") == 0){
         cmd_splittest();
-    }else {
+    } else if (strcmp(cmd, "history") == 0) {
+         cmd_history();
+    } else if (strcmp(cmd, "test") == 0) {
+        kprintf("dec: %d\n", -42);
+        kprintf("hex: 0x%x\n", 0xDEADBEEF);
+        kprintf("str: %s\n", "hello");
+        kprintf("char: %c\n", 'X');
+        kprintf("ptr: %p\n", (void *)0x12345678);
+        kprintf("mix: %s=%d (0x%x)\n", "val", 42, 42);
+    } else if (strcmp(cmd, "heaptest") == 0) {
+        int n = 0;
+        while (1) {
+            void *p = kmalloc(1024 * 1024);   /* 1 MiB */
+            if (!p) {
+                kprintf("heaptest: kmalloc failed after %d MiB\n", n);
+                break;
+            }
+            n++;
+            if (n > 64) break;   /* safety: don't loop forever if the allocator is broken */
+        }
+    } else {
         print_string("unknown: ");
         print_string(cmd);
         print_char('\n');
