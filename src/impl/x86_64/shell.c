@@ -5,6 +5,7 @@
 #include "timer.h"
 #include "x86_64/rtc.h"
 #include "falloc.h"
+#include "vmm.h"
 
 static size_t prev_len = 0;
 static void redraw_line(const char *buf, size_t len, size_t pos, const char* prompt) {
@@ -86,6 +87,43 @@ static void cmd_echo(char *arg) {
     print_char('\n');
 }
 
+static void cmd_maptest(void) {
+    const uint64_t virt = 0x40000000ULL;
+
+    uint64_t frame = alloc_frame();
+    if (frame == 0) {
+        print_string("maptest: alloc_frame failed\n");
+        return;
+    }
+    print_string("maptest: got frame 0x");
+    print_uint64_hex(frame);
+    print_char('\n');
+
+    vmm_map_page(virt, frame, PAGE_WRITABLE);
+    print_string("maptest: mapped 0x40000000 -> frame\n");
+
+    volatile uint64_t *p = (volatile uint64_t *)virt;
+    *p = 0xDEADBEEFCAFEBABEULL;
+    print_string("maptest: wrote 0xdeadbeefcafebabe\n");
+
+    if (*p == 0xDEADBEEFCAFEBABEULL) {
+        print_string("maptest: read back OK\n");
+    } else {
+        print_string("maptest: read back MISMATCH: 0x");
+        print_uint64_hex(*p);
+        print_char('\n');
+    }
+
+    uint64_t phys = vmm_get_physical(virt);
+    print_string("maptest: vmm_get_physical -> 0x");
+    print_uint64_hex(phys);
+    print_char('\n');
+
+    vmm_unmap_page(virt);
+    print_string("maptest: unmapped\n");
+}
+
+
 void handle_command(const char *cmd) {
     if (cmd[0] == '\0') return;
 
@@ -122,6 +160,8 @@ void handle_command(const char *cmd) {
         print_string("free frames: ");
         print_uint64_dec(frames_free_count());
         print_char('\n');
+    } else if (strcmp(cmd, "maptest") == 0) {
+        cmd_maptest();
     } else {
         print_string("unknown: ");
         print_string(cmd);

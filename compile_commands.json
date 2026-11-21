@@ -7,11 +7,11 @@
       "src/intf",
       "-ffreestanding",
       "-o",
-      "build/kernel/main.o",
-      "src/impl/kernel/main.c"
+      "build/kernel/keycodes.o",
+      "src/impl/kernel/keycodes.c"
     ],
     "directory": "/home/nguk7/OS",
-    "file": "/home/nguk7/OS/src/impl/kernel/main.c",
-    "output": "/home/nguk7/OS/build/kernel/main.o"
+    "file": "/home/nguk7/OS/src/impl/kernel/keycodes.c",
+    "output": "/home/nguk7/OS/build/kernel/keycodes.o"
   }
 ]
