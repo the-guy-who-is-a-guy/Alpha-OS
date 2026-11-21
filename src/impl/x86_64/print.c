@@ -37,7 +37,7 @@ void newline(){
 
     for (size_t r = 1; r < NUM_ROWS; r++) {
         for (size_t c = 0; c < NUM_COLS; c++) {
-            struct Char character = buffer[r];
+            struct Char character = buffer[c + NUM_COLS * r];
             buffer[c + NUM_COLS * (r - 1)] = character;
         }
     }

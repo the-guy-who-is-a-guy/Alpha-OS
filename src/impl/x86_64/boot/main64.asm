@@ -1,32 +1,37 @@
 global long_mode_start
+global higher_half_entry
 extern kernel_main
 extern multiboot_ptr
+extern stack_top
 
-section .text
+%define KERNEL_VMA 0xFFFF800000000000
+
+section .boot.text
 bits 64
 
 long_mode_start:
-    mov rax, higher_half_entry
+    movabs rax, higher_half_entry
     jmp rax
 
+section .text
 higher_half_entry:
-    mov qword [page_table_l4 - KERNEL_VMA + 0*8], 0
-    
-    mov rax, cr3
-    mov cr3, rax
+    ; The stack is in the higher-half .bss mapping.
+    movabs rsp, stack_top
 
     mov ax, 0
     mov ss, ax
     mov ds, ax
     mov es, ax
     mov fs, ax
-    mov gs, ax       ; zero everything
+    mov gs, ax
 
-    mov rsp, stack_top
-
-    mov rdi, [rel multiboot_ptr]
-    mov rax, 0xFFFF800000000000
+    ; The identity map stays active for code that dereferences physical addresses.
+    movabs rax, multiboot_ptr
+    mov rdi, [rax]
+    movabs rax, KERNEL_VMA
     add rdi, rax
 
-    call kernel_main ; call the c program because assembly is sh*t
-    hlt              ; end program
+    movabs rax, kernel_main
+    call rax
+
+    hlt

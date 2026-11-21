@@ -6,6 +6,8 @@
 #define MAX_FRAMES      (128 * 1024 * 1024 / 4096)
 #define FRAME_SIZE      4096
 #define BITMAP_BYTES    (MAX_FRAMES / 8)
+#define KERNEL_PHYS_START 0x100000ULL
+#define KERNEL_VMA      0xFFFF800000000000ULL
 
 static uint8_t frame_bitmap[BITMAP_BYTES];
 
@@ -13,8 +15,7 @@ static uint8_t frame_bitmap[BITMAP_BYTES];
 struct MemoryRange usable_ranges[MAX_MEMORY_RANGES];
 int usable_range_count = 0;
 
-/* Linker-provided symbols (see linker script). */
-extern uint8_t _kernel_start;
+/* The boot image starts at 1 MiB; _kernel_end is a higher-half virtual address. */
 extern uint8_t _kernel_end;
 
 /* ------------------------------------------------------------------ */
@@ -68,9 +69,9 @@ void frames_init(void) {
         bitmap_set(f);
     }
 
-    /* 4. Reserve the kernel itself. */
-    uint64_t k_start = (uint64_t)&_kernel_start / FRAME_SIZE;
-    uint64_t k_end   = ((uint64_t)&_kernel_end + FRAME_SIZE - 1) / FRAME_SIZE;
+    /* 4. Reserve the boot image and higher-half kernel. */
+    uint64_t k_start = KERNEL_PHYS_START / FRAME_SIZE;
+    uint64_t k_end   = (((uint64_t)&_kernel_end - KERNEL_VMA) + FRAME_SIZE - 1) / FRAME_SIZE;
     for (uint64_t f = k_start; f < k_end && f < MAX_FRAMES; f++) {
         bitmap_set(f);
     }

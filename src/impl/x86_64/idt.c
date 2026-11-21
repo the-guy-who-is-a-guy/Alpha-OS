@@ -78,7 +78,7 @@ void idt_set_entry(uint8_t vector, uint64_t isr_addr, uint16_t selector, uint8_t
         .ist = 0,
         .type = type,
         .offset_mid = (uint16_t) (isr_addr >> 16),
-        .offset_high = (uint16_t) (isr_addr >> 32),
+        .offset_high = (uint32_t) (isr_addr >> 32),
         .reserved = 0,
 
     };
